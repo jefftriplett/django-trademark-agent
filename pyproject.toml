@@ -1,7 +1,7 @@
 [project]
 name = "django-trademark-agent"
 version = "0.1.0"
-description = "Django Trademark Agent"
+description = "Django Trademark Agent (Unofficial)"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
