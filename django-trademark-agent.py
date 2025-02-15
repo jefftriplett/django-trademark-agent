@@ -28,9 +28,7 @@ OPENAI_MODEL_NAME: str = env.str("OPENAI_MODEL_NAME", default="o3-mini")
 class Result(BaseModel):
     approved: bool
     reasoning: str
-    sections: list[str] = Field(
-        description="Sections to reference if there is a violation"
-    )
+    sections: list[str] = Field(description="Sections to reference if there is a violation")
 
 
 def fetch_and_cache(
@@ -80,15 +78,9 @@ def main(question: str, model_name: str = OPENAI_MODEL_NAME):
     result = agent.run_sync(question)
 
     if result.data.approved:
-        print(
-            "[yellow][bold]Approval status:[/bold][/yellow] "
-            f"[green]{result.data.approved}[/green]\n"
-        )
+        print(f"[yellow][bold]Approval status:[/bold][/yellow] [green]{result.data.approved}[/green]\n")
     else:
-        print(
-            "[yellow][bold]Approval status:[/bold][/yellow] "
-            f"[red]{result.data.approved}[/red]\n"
-        )
+        print(f"[yellow][bold]Approval status:[/bold][/yellow] [red]{result.data.approved}[/red]\n")
 
     print(f"[yellow][bold]Reasoning:[/bold][/yellow] {result.data.reasoning}\n")
 
