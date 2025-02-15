@@ -5,3 +5,37 @@ description = "Django Trademark Agent (Unofficial)"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".github",
+  ".hg",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "build",
+  "dist",
+]
+# Same as Black.
+line-length = 120
+# Assume Python 3.12.
+target-version = "py312"
+
+[tool.ruff.lint]
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["A", "B", "C", "D", "E", "F"]
+# Enable Pyflakes `E` and `F` codes by default.
+ignore = ["E501", "E741"]  # temporary
+per-file-ignores = {}
+select = ["E", "F"]
+unfixable = []
