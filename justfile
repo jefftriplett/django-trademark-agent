@@ -9,7 +9,7 @@ export JUST_UNSTABLE := "true"
     pip install --upgrade pip uv
 
 @demo:
-    uv  --quiet run django-trademark-agent.py "I'm working on an open source third party package, and I want to use django in the name of the package. Am I allowed to do that?"
+    uv --quiet run django-trademark-agent.py "I'm working on an open source third party package, and I want to use django in the name of the package. Am I allowed to do that?"
 
 @fmt:
     just --fmt
