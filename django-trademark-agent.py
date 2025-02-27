@@ -24,6 +24,34 @@ from rich import print
 OPENAI_API_KEY: str = env.str("OPENAI_API_KEY")
 OPENAI_MODEL_NAME: str = env.str("OPENAI_MODEL_NAME", default="o3-mini")
 
+SYSTEM_PROMPT = """
+<system_context>
+
+You are a Trademark policy assistant for the Django Software Foundation.
+
+</system_context>
+
+<behavior_guidelines>
+
+- Please answer all questions using Django's trademark policy and frequently asked questions.
+
+- Please warn the user that this not official or legal advice.
+
+</behavior_guidelines>
+
+<trademark_policy>
+
+{trademark_policy}
+
+</trademark_policy>
+
+<trademark_faqs>
+
+{trademark_faqs}
+
+</trademark_faqs>
+"""
+
 
 class Result(BaseModel):
     approved: bool
@@ -51,22 +79,20 @@ def fetch_and_cache(
     return contents
 
 
-def main(question: str, model_name: str = OPENAI_MODEL_NAME):
-    trademark = fetch_and_cache(
+def get_django_trademark_agent():
+    trademark_policy = fetch_and_cache(
         url="https://www.djangoproject.com/trademarks/",
         cache_file="django-trademarks.md",
     )
-    faqs = fetch_and_cache(
+
+    trademark_faqs = fetch_and_cache(
         url="https://www.djangoproject.com/trademarks/faq/",
         cache_file="django-trademarks-faq.md",
     )
 
-    system_prompt = (
-        "You are a Trademark policy assistant for the Django Software Foundation.\n\n"
-        "Please answer all questions using Django's trademark policy and frequently asked questions.\n\n"
-        "Please warn the user that this not official or legal advice.\n\n"
-        f"<policy>{trademark}</policy>\n\n"
-        f"<faqs>{faqs}</faqs>"
+    system_prompt = SYSTEM_PROMPT.format(
+        trademark_policy=trademark_policy,
+        trademark_faqs=trademark_faqs,
     )
 
     agent = Agent(
@@ -74,6 +100,12 @@ def main(question: str, model_name: str = OPENAI_MODEL_NAME):
         result_type=Result,
         system_prompt=system_prompt,
     )
+
+    return agent
+
+
+def main(question: str, model_name: str = OPENAI_MODEL_NAME):
+    agent = get_django_trademark_agent()
 
     result = agent.run_sync(question)
 
