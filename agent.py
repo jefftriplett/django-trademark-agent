@@ -55,7 +55,8 @@ You are a Trademark policy assistant for the Django Software Foundation.
 
 class Result(BaseModel):
     approved: bool
-    reasoning: str
+    answer: str = Field(description="The answer to our question")
+    reasoning: str = Field(description="The reasoning and support for our answer based on our source material")
     sections: list[str] = Field(description="Sections to reference if there is a violation")
 
 
@@ -114,7 +115,10 @@ def main(question: str, model_name: str = OPENAI_MODEL_NAME):
     else:
         print(f"[yellow][bold]Approval status:[/bold][/yellow] [red]{result.data.approved}[/red]\n")
 
-    print(f"[yellow][bold]Reasoning:[/bold][/yellow] {result.data.reasoning}\n")
+    print(
+        f"[green][bold]Answer:[/bold][/green] {result.data.answer}\n\n"
+        f"[yellow][bold]Reasoning:[/bold][/yellow] {result.data.reasoning}\n"
+    )
 
     if result.data.sections:
         print("[yellow][bold]Sections:[/bold][/yellow]")
