@@ -1,13 +1,43 @@
 # Django Trademark Agent (Unofficial)
 
-This was an experiment to build an AI Agent that can help answer common questions about Django's Trademark policy.
+An AI agent that helps answer common questions about Django's Trademark policy.
 
-Please note: It's not official or legal advice.
+**DISCLAIMER:** This is not official or legal advice. This tool is intended for educational purposes only.
+
+## Requirements
+
+- Python 3.12+
+- uv (Python package management tool)
+
+## Installation
+
+```shell
+# Install pip and uv
+just bootstrap
+
+# Or manually
+pip install --upgrade pip uv
+```
 
 ## Usage
 
+You can use the agent directly:
+
 ```shell
-$ uv run agent.py "I'm working on an open source third party package, and I want to use django in the name of the package. Am I allowed to do that?"
+# Using uv
+uv run agent.py "Can I use 'django' in my company name?"
+
+# Or use the just command
+just ask "Can I use 'django' in my company name?"
+
+# Run a demo with a sample question
+just demo
+```
+
+### Example Output
+
+```shell
+$ just ask "I'm working on an open source third party package, and I want to use django in the name of the package. Am I allowed to do that?"
 Approval status: True
 
 Answer: Yes, you are allowed to include 'django' in your package's name provided that your package is open source (released under an OSI-approved license) and you do
@@ -22,4 +52,14 @@ approval, and avoid any implication of ownership or official status.
 Sections:
 - Trademark FAQ: We're the author/maintainer of a Django-related package
 - Django Trademark License Agreement (nominative use)
+```
+
+## Development
+
+```shell
+# Run linting
+just lint
+
+# Format code
+just fmt
 ```
