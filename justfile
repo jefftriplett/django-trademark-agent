@@ -8,7 +8,7 @@ export JUST_UNSTABLE := "true"
 
 # Process with the Django trademark agent
 @agent *ARGS:
-    uv --quiet run agent.py "{{ ARGS }}"
+    uv --quiet run src/agent.py "{{ ARGS }}"
 
 # Ask the trademark agent a question
 @ask *ARGS:
