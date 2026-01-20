@@ -18,8 +18,9 @@ from pathlib import Path
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic_ai import Agent
-from rich import print
+from rich.console import Console
 
+console = Console()
 
 OPENAI_API_KEY: str = env.str("OPENAI_API_KEY")
 OPENAI_MODEL_NAME: str = env.str("OPENAI_MODEL_NAME", default="gpt-5-mini")
@@ -96,26 +97,51 @@ def get_django_trademark_agent():
     return agent
 
 
-def main(question: str, model_name: str = OPENAI_MODEL_NAME):
+app = typer.Typer(help="Django Trademark Agent - Ask questions about DSF trademark policy")
+
+
+@app.command()
+def ask(question: str, model_name: str = OPENAI_MODEL_NAME):
+    """Ask the trademark agent a question."""
     agent = get_django_trademark_agent()
 
     result = agent.run_sync(question)
 
     if result.output.approved:
-        print(f"[yellow][bold]Approval status:[/bold][/yellow] [green]{result.output.approved}[/green]\n")
+        console.print(f"[yellow][bold]Approval status:[/bold][/yellow] [green]{result.output.approved}[/green]\n")
     else:
-        print(f"[yellow][bold]Approval status:[/bold][/yellow] [red]{result.output.approved}[/red]\n")
+        console.print(f"[yellow][bold]Approval status:[/bold][/yellow] [red]{result.output.approved}[/red]\n")
 
-    print(
+    console.print(
         f"[green][bold]Answer:[/bold][/green] {result.output.answer}\n\n"
         f"[yellow][bold]Reasoning:[/bold][/yellow] {result.output.reasoning}\n"
     )
 
     if result.output.sections:
-        print("[yellow][bold]Sections:[/bold][/yellow]")
+        console.print("[yellow][bold]Sections:[/bold][/yellow]")
         for section in result.output.sections:
-            print(f"- {section}")
+            console.print(f"- {section}")
+
+
+@app.command()
+def debug():
+    """Print the compiled system prompt for debugging."""
+    trademark_policy = fetch_and_cache(
+        url="https://www.djangoproject.com/trademarks/",
+        cache_file="django-trademarks.md",
+    )
+    trademark_faqs = fetch_and_cache(
+        url="https://www.djangoproject.com/trademarks/faq/",
+        cache_file="django-trademarks-faq.md",
+    )
+
+    console.print("[bold cyan]===== SYSTEM PROMPT =====[/bold cyan]\n")
+    console.print(SYSTEM_PROMPT)
+    console.print("\n[bold cyan]===== INSTRUCTIONS =====[/bold cyan]\n")
+    console.print(f"<trademark_policy>\n\n{trademark_policy}\n\n</trademark_policy>")
+    console.print(f"\n<trademark_faqs>\n\n{trademark_faqs}\n\n</trademark_faqs>")
+    console.print("\n[bold cyan]=========================[/bold cyan]")
 
 
 if __name__ == "__main__":
-    typer.run(main)
+    app()

@@ -6,13 +6,13 @@ export JUST_UNSTABLE := "true"
 @_default:
     just --list
 
-# Process with the Django trademark agent
-@agent *ARGS:
-    uv --quiet run src/agent.py "{{ ARGS }}"
-
 # Ask the trademark agent a question
 @ask *ARGS:
-    just agent "{{ ARGS }}"
+    uv --quiet run src/agent.py ask "{{ ARGS }}"
+
+# Print the compiled system prompt for debugging
+@debug:
+    uv --quiet run src/agent.py debug
 
 # Install pip and uv package management tools
 @bootstrap *ARGS:
