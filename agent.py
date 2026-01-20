@@ -38,18 +38,6 @@ You are a Trademark policy assistant for the Django Software Foundation.
 - Please warn the user that this not official or legal advice.
 
 </behavior_guidelines>
-
-<trademark_policy>
-
-{trademark_policy}
-
-</trademark_policy>
-
-<trademark_faqs>
-
-{trademark_faqs}
-
-</trademark_faqs>
 """
 
 
@@ -91,16 +79,19 @@ def get_django_trademark_agent():
         cache_file="django-trademarks-faq.md",
     )
 
-    system_prompt = SYSTEM_PROMPT.format(
-        trademark_policy=trademark_policy,
-        trademark_faqs=trademark_faqs,
-    )
-
     agent = Agent(
         model=OPENAI_MODEL_NAME,
         output_type=Output,
-        system_prompt=system_prompt,
+        system_prompt=SYSTEM_PROMPT,
     )
+
+    @agent.instructions
+    def add_trademark_policy() -> str:
+        return f"<trademark_policy>\n\n{trademark_policy}\n\n</trademark_policy>"
+
+    @agent.instructions
+    def add_trademark_faqs() -> str:
+        return f"<trademark_faqs>\n\n{trademark_faqs}\n\n</trademark_faqs>"
 
     return agent
 
