@@ -25,7 +25,7 @@ You can use the agent directly:
 
 ```shell
 # Using uv
-uv run agent.py "Can I use 'django' in my company name?"
+uv run src/agent.py "Can I use 'django' in my company name?"
 
 # Or use the just command
 just ask "Can I use 'django' in my company name?"
