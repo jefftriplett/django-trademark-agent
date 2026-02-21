@@ -20,6 +20,7 @@ uv run src/agent.py ask "Can I use 'django' in my company name?"
 |---------|-------------|
 | `just` | List all available commands |
 | `just ask "..."` | Ask the trademark agent a question |
+| `just web` | Launch the agent as a web chat interface |
 | `just debug` | Print the compiled system prompt for debugging |
 | `just demo` | Run a demo with a sample question |
 | `just bootstrap` | Install pip and uv |

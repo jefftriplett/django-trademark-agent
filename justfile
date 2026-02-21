@@ -14,6 +14,10 @@ export JUST_UNSTABLE := "true"
 @debug:
     uv --quiet run src/agent.py debug
 
+# Launch the agent as a web chat interface
+@web *ARGS:
+    uv --quiet run src/agent.py web {{ ARGS }}
+
 # Install pip and uv package management tools
 @bootstrap *ARGS:
     pip install --upgrade pip uv
