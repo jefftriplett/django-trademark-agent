@@ -5,6 +5,7 @@
 #     "httpx",
 #     "environs",
 #     "pydantic-ai-slim[openai]",
+#     "pydantic-ai-slim[web]",
 #     "rich",
 #     "typer",
 # ]
@@ -69,30 +70,34 @@ def fetch_and_cache(
     return contents
 
 
-def get_django_trademark_agent():
+def load_data():
     trademark_policy = fetch_and_cache(
         url="https://www.djangoproject.com/trademarks/",
         cache_file="django-trademarks.md",
     )
-
     trademark_faqs = fetch_and_cache(
         url="https://www.djangoproject.com/trademarks/faq/",
         cache_file="django-trademarks-faq.md",
     )
+    return {"trademark_policy": trademark_policy, "trademark_faqs": trademark_faqs}
+
+
+def get_agent(*, output_type=Output):
+    data = load_data()
 
     agent = Agent(
         model=OPENAI_MODEL_NAME,
-        output_type=Output,
+        output_type=output_type,
         system_prompt=SYSTEM_PROMPT,
     )
 
     @agent.instructions
     def add_trademark_policy() -> str:
-        return f"<trademark_policy>\n\n{trademark_policy}\n\n</trademark_policy>"
+        return f"<trademark_policy>\n\n{data['trademark_policy']}\n\n</trademark_policy>"
 
     @agent.instructions
     def add_trademark_faqs() -> str:
-        return f"<trademark_faqs>\n\n{trademark_faqs}\n\n</trademark_faqs>"
+        return f"<trademark_faqs>\n\n{data['trademark_faqs']}\n\n</trademark_faqs>"
 
     return agent
 
@@ -103,7 +108,7 @@ app = typer.Typer(help="Django Trademark Agent - Ask questions about DSF tradema
 @app.command()
 def ask(question: str, model_name: str = OPENAI_MODEL_NAME):
     """Ask the trademark agent a question."""
-    agent = get_django_trademark_agent()
+    agent = get_agent()
 
     result = agent.run_sync(question)
 
@@ -124,22 +129,30 @@ def ask(question: str, model_name: str = OPENAI_MODEL_NAME):
 
 
 @app.command()
+def web(
+    host: str = "127.0.0.1",
+    port: int = 8080,
+):
+    """Launch the trademark agent as a web chat interface."""
+    import uvicorn
+
+    agent = get_agent(output_type=None)
+    web_app = agent.to_web()
+
+    console.print(f"[bold green]Starting web interface at http://{host}:{port}[/bold green]")
+    uvicorn.run(web_app, host=host, port=port)
+
+
+@app.command()
 def debug():
     """Print the compiled system prompt for debugging."""
-    trademark_policy = fetch_and_cache(
-        url="https://www.djangoproject.com/trademarks/",
-        cache_file="django-trademarks.md",
-    )
-    trademark_faqs = fetch_and_cache(
-        url="https://www.djangoproject.com/trademarks/faq/",
-        cache_file="django-trademarks-faq.md",
-    )
+    data = load_data()
 
     console.print("[bold cyan]===== SYSTEM PROMPT =====[/bold cyan]\n")
     console.print(SYSTEM_PROMPT)
     console.print("\n[bold cyan]===== INSTRUCTIONS =====[/bold cyan]\n")
-    console.print(f"<trademark_policy>\n\n{trademark_policy}\n\n</trademark_policy>")
-    console.print(f"\n<trademark_faqs>\n\n{trademark_faqs}\n\n</trademark_faqs>")
+    console.print(f"<trademark_policy>\n\n{data['trademark_policy']}\n\n</trademark_policy>")
+    console.print(f"\n<trademark_faqs>\n\n{data['trademark_faqs']}\n\n</trademark_faqs>")
     console.print("\n[bold cyan]=========================[/bold cyan]")
 
 
