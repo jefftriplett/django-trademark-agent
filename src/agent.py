@@ -14,6 +14,7 @@
 
 import httpx
 import typer
+import uvicorn
 
 from environs import env
 from pathlib import Path
@@ -135,8 +136,6 @@ def web(
     port: int = 8080,
 ):
     """Launch the trademark agent as a web chat interface."""
-    import uvicorn
-
     agent = get_agent(output_type=None)
     web_app = agent.to_web()
 
