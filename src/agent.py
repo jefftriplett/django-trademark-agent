@@ -8,6 +8,7 @@
 #     "pydantic-ai-slim[web]",
 #     "rich",
 #     "typer",
+#     "uvicorn",
 # ]
 # ///
 
