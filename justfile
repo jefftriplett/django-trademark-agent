@@ -14,10 +14,6 @@ export JUST_UNSTABLE := "true"
 @debug:
     uv --quiet run src/agent.py debug
 
-# Launch the agent as a web chat interface
-@web *ARGS:
-    uv --quiet run src/agent.py web {{ ARGS }}
-
 # Install pip and uv package management tools
 @bootstrap *ARGS:
     pip install --upgrade pip uv
@@ -30,10 +26,6 @@ export JUST_UNSTABLE := "true"
 @fmt:
     just --fmt
 
-# Run pre-commit hooks on all files
-@lint *ARGS:
-    uv --quiet tool run prek {{ ARGS }} --all-files
-
-# Update pre-commit hooks to latest versions
-@lint-autoupdate:
-    uv --quiet tool run prek autoupdate
+# Run pre-commit checks on files
+@lint *ARGS="--all-files":
+    uv --quiet tool run --with pre-commit-uv pre-commit run {{ ARGS }}

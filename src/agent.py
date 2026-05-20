@@ -104,7 +104,10 @@ def get_agent(*, output_type=Output):
     return agent
 
 
-app = typer.Typer(help="Django Trademark Agent - Ask questions about DSF trademark policy")
+app = typer.Typer(
+    help="Django Trademark Agent - Ask questions about DSF trademark policy",
+    no_args_is_help=True,
+)
 
 
 @app.command()
