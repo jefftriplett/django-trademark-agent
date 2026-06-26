@@ -5,7 +5,6 @@
 #     "httpx",
 #     "environs",
 #     "pydantic-ai-slim[openai]>=2,<3",
-#     "pydantic-ai-slim[web]>=2,<3",
 #     "rich",
 #     "typer",
 #     "uvicorn",
