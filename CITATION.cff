@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+title: Django Trademark Agent (Unofficial)
+message: 'If you use this software, please cite it as below.'
+type: software
+authors:
+  - family-names: Triplett
+    given-names: Jeff
+repository-code: 'https://github.com/jefftriplett/django-trademark-agent'
+url: 'https://jefftriplett.com'
+abstract: >-
+  An unofficial AI agent for working with Django trademark policies.
+license: PolyForm-Noncommercial-1.0.0
