@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#     "httpx",
+#     "httpx2",
 #     "environs",
 #     "pydantic-ai-slim[openai]>=2,<3",
 #     "rich",
@@ -11,7 +11,9 @@
 # ]
 # ///
 
-import httpx
+import time
+
+import httpx2
 import typer
 import uvicorn
 
@@ -26,6 +28,8 @@ console = Console()
 
 OPENAI_API_KEY: str = env.str("OPENAI_API_KEY")
 OPENAI_MODEL_NAME: str = env.str("OPENAI_MODEL_NAME", default="openai:gpt-5.4-nano")
+
+CACHE_MAX_AGE_HOURS: float = env.float("CACHE_MAX_AGE_HOURS", default=24.0)
 
 SYSTEM_PROMPT = """
 <system_context>
@@ -51,40 +55,58 @@ class Output(BaseModel):
     sections: list[str] = Field(description="Sections to reference")
 
 
+def cache_is_fresh(filename: Path, max_age_hours: float) -> bool:
+    """Return True if the cache file exists and is younger than max_age_hours."""
+    if not filename.exists() or max_age_hours <= 0:
+        return False
+
+    return (time.time() - filename.stat().st_mtime) < (max_age_hours * 3600)
+
+
 def fetch_and_cache(
     *,
     url: str,
     cache_file: str,
     timeout: float = 10.0,
+    max_age_hours: float = CACHE_MAX_AGE_HOURS,
+    refresh: bool = False,
 ):
     filename = Path(cache_file)
-    if filename.exists():
+    if not refresh and cache_is_fresh(filename, max_age_hours):
         return filename.read_text()
 
-    response = httpx.get(f"https://r.jina.ai/{url}", timeout=timeout)
-    response.raise_for_status()
+    try:
+        response = httpx2.get(f"https://r.jina.ai/{url}", timeout=timeout, follow_redirects=True)
+        response.raise_for_status()
+    except httpx2.HTTPError as exc:
+        if filename.exists():
+            console.print(f"[yellow]Could not refresh {filename}: {exc}. Using the cached copy.[/yellow]")
+            return filename.read_text()
+        raise
 
     contents = response.text
 
-    Path(cache_file).write_text(contents)
+    filename.write_text(contents)
 
     return contents
 
 
-def load_data():
+def load_data(*, refresh: bool = False):
     trademark_policy = fetch_and_cache(
         url="https://www.djangoproject.com/trademarks/",
         cache_file="django-trademarks.md",
+        refresh=refresh,
     )
     trademark_faqs = fetch_and_cache(
         url="https://www.djangoproject.com/trademarks/faq/",
         cache_file="django-trademarks-faq.md",
+        refresh=refresh,
     )
     return {"trademark_policy": trademark_policy, "trademark_faqs": trademark_faqs}
 
 
-def get_agent(*, output_type=Output):
-    data = load_data()
+def get_agent(*, output_type=Output, refresh: bool = False):
+    data = load_data(refresh=refresh)
 
     agent = Agent(
         model=OPENAI_MODEL_NAME,
@@ -110,9 +132,13 @@ app = typer.Typer(
 
 
 @app.command()
-def ask(question: str, model_name: str = OPENAI_MODEL_NAME):
+def ask(
+    question: str,
+    model_name: str = OPENAI_MODEL_NAME,
+    refresh: bool = typer.Option(False, help="Re-fetch the source documents, ignoring the cache."),
+):
     """Ask the trademark agent a question."""
-    agent = get_agent()
+    agent = get_agent(refresh=refresh)
 
     result = agent.run_sync(question)
 
@@ -136,9 +162,10 @@ def ask(question: str, model_name: str = OPENAI_MODEL_NAME):
 def web(
     host: str = "127.0.0.1",
     port: int = 8080,
+    refresh: bool = typer.Option(False, help="Re-fetch the source documents, ignoring the cache."),
 ):
     """Launch the trademark agent as a web chat interface."""
-    agent = get_agent(output_type=None)
+    agent = get_agent(output_type=None, refresh=refresh)
     web_app = agent.to_web()
 
     console.print(f"[bold green]Starting web interface at http://{host}:{port}[/bold green]")
@@ -146,9 +173,11 @@ def web(
 
 
 @app.command()
-def debug():
+def debug(
+    refresh: bool = typer.Option(False, help="Re-fetch the source documents, ignoring the cache."),
+):
     """Print the compiled system prompt for debugging."""
-    data = load_data()
+    data = load_data(refresh=refresh)
 
     console.print("[bold cyan]===== SYSTEM PROMPT =====[/bold cyan]\n")
     console.print(SYSTEM_PROMPT)
