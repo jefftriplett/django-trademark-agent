@@ -227,5 +227,83 @@ def mcp(
         server.run()
 
 
+# Maps a pydantic-ai model prefix to the env var holding that provider's key, so
+# doctor notices when the model points at a provider you have no credentials for.
+DOCTOR_PROVIDER_KEYS: dict[str, str] = {
+    "anthropic": "ANTHROPIC_API_KEY",
+    "cohere": "CO_API_KEY",
+    "deepseek": "DEEPSEEK_API_KEY",
+    "google": "GEMINI_API_KEY",
+    "google-gla": "GEMINI_API_KEY",
+    "groq": "GROQ_API_KEY",
+    "mistral": "MISTRAL_API_KEY",
+    "openai": "OPENAI_API_KEY",
+}
+
+DOCTOR_OPTIONAL_ENV: list[str] = []
+
+
+def doctor_mask(value: str) -> str:
+    """Show enough of a secret to recognize it, never enough to use it."""
+    if len(value) <= 8:
+        return "set"
+    return f"{value[:4]}...{value[-4:]}"
+
+
+def run_doctor(probe: bool = True) -> bool:
+    """Report config/credential/connectivity status. Returns False on any failure."""
+    results: list[tuple[str, str, str]] = []
+
+    results.append(("pass", "Model", PYDANTIC_AI_MODEL))
+
+    provider = PYDANTIC_AI_MODEL.split(":", 1)[0] if ":" in PYDANTIC_AI_MODEL else ""
+    expected_key = DOCTOR_PROVIDER_KEYS.get(provider)
+    if expected_key is None:
+        results.append(
+            ("warn", "Provider", f"unrecognized provider {provider!r}; cannot check its key")
+        )
+    elif value := env.str(expected_key, default=""):
+        results.append(("pass", expected_key, doctor_mask(value)))
+    else:
+        results.append(("fail", expected_key, f"not set -- add {expected_key} to .env"))
+
+    for name in DOCTOR_OPTIONAL_ENV:
+        if value := env.str(name, default=""):
+            results.append(("pass", name, doctor_mask(value)))
+        else:
+            results.append(("warn", name, "not set (optional; some features disabled)"))
+
+    if probe:
+        try:
+            Agent(model=PYDANTIC_AI_MODEL).run_sync("Reply with: ok")
+            results.append(("pass", "Live probe", "backend reachable and responding"))
+        except Exception as exc:
+            results.append(("fail", "Live probe", f"{type(exc).__name__}: {exc}"))
+    else:
+        results.append(("warn", "Live probe", "skipped (--no-probe)"))
+
+    console.print("\n[bold]Doctor[/bold]\n")
+    styles = {"pass": "green", "warn": "yellow", "fail": "red"}
+    for status, label, detail in results:
+        console.print(
+            f"[{styles[status]}]{status.upper():<4}[/{styles[status]}] {label:<18} {detail}"
+        )
+
+    failed = sum(1 for status, _, _ in results if status == "fail")
+    warned = sum(1 for status, _, _ in results if status == "warn")
+    if failed:
+        console.print(f"\n[red]{failed} failed[/red], {warned} warning(s)\n")
+        return False
+    console.print(f"\n[green]All checks passed[/green] ({warned} warning(s))\n")
+    return True
+
+
+@app.command()
+def doctor(probe: bool = True):
+    """Check configuration and credentials, then probe the LLM backend."""
+    if not run_doctor(probe=probe):
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":
     app()

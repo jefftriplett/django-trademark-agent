@@ -41,3 +41,7 @@ export JUST_UNSTABLE := "true"
 # Update pre-commit hooks to latest versions
 @lint-autoupdate:
     uv --quiet tool run prek autoupdate
+
+# Verify configuration and probe the LLM backend
+@doctor *ARGS:
+    uv --quiet run src/agent.py doctor {{ ARGS }}
