@@ -4,7 +4,7 @@
 # dependencies = [
 #     "httpx2",
 #     "environs",
-#     "pydantic-ai-slim[openai]>=2,<3",
+#     "pydantic-ai-slim[openai,web]>=2,<3",
 #     "rich",
 #     "typer",
 #     "uvicorn",
@@ -165,7 +165,9 @@ def web(
     refresh: bool = typer.Option(False, help="Re-fetch the source documents, ignoring the cache."),
 ):
     """Launch the trademark agent as a web chat interface."""
-    agent = get_agent(output_type=None, refresh=refresh)
+    # output_type=str keeps replies conversational. Pydantic AI v2 rejects None here —
+    # it reads it as "no output types provided" and raises UserError.
+    agent = get_agent(output_type=str, refresh=refresh)
     web_app = agent.to_web()
 
     console.print(f"[bold green]Starting web interface at http://{host}:{port}[/bold green]")
