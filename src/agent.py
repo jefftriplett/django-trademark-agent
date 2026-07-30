@@ -28,7 +28,7 @@ from rich.console import Console
 console = Console()
 
 OPENAI_API_KEY: str = env.str("OPENAI_API_KEY")
-OPENAI_MODEL_NAME: str = env.str("OPENAI_MODEL_NAME", default="openai:gpt-5.4-nano")
+PYDANTIC_AI_MODEL: str = env.str("PYDANTIC_AI_MODEL", default="openai:gpt-5.4-nano")
 
 CACHE_MAX_AGE_HOURS: float = env.float("CACHE_MAX_AGE_HOURS", default=24.0)
 
@@ -110,7 +110,7 @@ def get_agent(*, output_type=Output, refresh: bool = False):
     data = load_data(refresh=refresh)
 
     agent = Agent(
-        model=OPENAI_MODEL_NAME,
+        model=PYDANTIC_AI_MODEL,
         output_type=output_type,
         system_prompt=SYSTEM_PROMPT,
     )
@@ -135,7 +135,7 @@ app = typer.Typer(
 @app.command()
 def ask(
     question: str,
-    model_name: str = OPENAI_MODEL_NAME,
+    model_name: str = PYDANTIC_AI_MODEL,
     refresh: bool = typer.Option(False, help="Re-fetch the source documents, ignoring the cache."),
 ):
     """Ask the trademark agent a question."""
