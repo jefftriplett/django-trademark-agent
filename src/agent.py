@@ -4,6 +4,7 @@
 # dependencies = [
 #     "httpx2",
 #     "environs",
+#     "fastmcp",
 #     "pydantic-ai-slim[openai,web]>=2,<3",
 #     "rich",
 #     "typer",
@@ -187,6 +188,43 @@ def debug(
     console.print(f"<trademark_policy>\n\n{data['trademark_policy']}\n\n</trademark_policy>")
     console.print(f"\n<trademark_faqs>\n\n{data['trademark_faqs']}\n\n</trademark_faqs>")
     console.print("\n[bold cyan]=========================[/bold cyan]")
+
+
+@app.command()
+def mcp(
+    refresh: bool = typer.Option(False, help="Re-fetch the source documents, ignoring the cache."),
+    transport: str = typer.Option("stdio", help="MCP transport: stdio or http"),
+    host: str = "127.0.0.1",
+    port: int = 8000,
+):
+    """Serve this agent as an MCP server so other agents can ask it questions.
+
+    Pydantic AI is an MCP client, not a server, so FastMCP handles the server side.
+    """
+    from fastmcp import FastMCP
+
+    server = FastMCP("django-trademark-agent")
+    cached = {}
+
+    def build_agent():
+        """Build on first use — loading the documents up front would stall the handshake."""
+        if "agent" not in cached:
+            cached["agent"] = get_agent(refresh=refresh)
+        return cached["agent"]
+
+    @server.tool
+    async def trademark_question(question: str) -> Output:
+        """Answer a question about Django's trademark policy."""
+        result = await build_agent().run(question)
+        return result.output
+
+    # stdio transport speaks JSON-RPC on stdout — log to stderr so we don't corrupt it.
+    Console(stderr=True).print(f"[bold green]Serving MCP over {transport}[/bold green]")
+
+    if transport == "http":
+        server.run(transport="http", host=host, port=port)
+    else:
+        server.run()
 
 
 if __name__ == "__main__":

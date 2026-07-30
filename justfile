@@ -18,6 +18,10 @@ export JUST_UNSTABLE := "true"
 @web *ARGS:
     uv --quiet run src/agent.py web {{ ARGS }}
 
+# Serve the agent as an MCP server (--transport http for HTTP)
+@mcp *ARGS:
+    uv --quiet run src/agent.py mcp {{ ARGS }}
+
 # Install pip and uv package management tools
 @bootstrap *ARGS:
     pip install --upgrade pip uv
